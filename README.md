@@ -40,6 +40,18 @@ A Python-based automation bot for Clash of Clans running on the Google Play Game
 - **Optional GPU acceleration** via `cv2.cuda` (falls back to CPU silently).
 - **Optional `mss` capture** — faster than `pyautogui.screenshot` when available.
 
+<p align="center">
+  <a href="https://www.paypal.com/donate/?business=ic31908%40gmail.com&currency_code=USD">
+    <img src="https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif" alt="Donate with PayPal" height="80">
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://www.paypal.com/donate/?business=ic31908%40gmail.com&currency_code=USD">
+    <img src="https://raw.githubusercontent.com/elestyle/elepay-payment-logos/master/payment_logos/svg/paypal.svg" alt="Donate with PayPal" height="100">
+  </a>
+</p>
+
 ---
 
 ## Requirements
