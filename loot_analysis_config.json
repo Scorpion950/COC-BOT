@@ -1,0 +1,19 @@
+{
+  "minimum_gold": 500000,
+  "minimum_elixir": 500000,
+  "ignore_dark_elixir": true,
+  "comparison_mode": "AND",
+  "ocr": {
+    "minimum_confidence": 0.75,
+    "upscale": 2,
+    "preprocessing": "grayscale",
+    "available_loot_region": {
+      "x": 0.04,
+      "y": 0.07,
+      "width": 0.17,
+      "height": 0.19
+    },
+    "gold_row": [0.35, 0.55],
+    "elixir_row": [0.57, 0.78]
+  }
+}

@@ -15,6 +15,9 @@ A Python-based automation bot for Clash of Clans running on the Google Play Game
 
 - [Features](#features)
 - [Requirements](#requirements)
+- [Passive Army Recognition](#passive-army-recognition)
+- [Passive Loot Analysis](#passive-loot-analysis)
+- [Next Button Recognition](#next-button-recognition)
 - [Installation](#installation)
 - [Setting up Google Play Games](#setting-up-google-play-games)
 - [First-Time Calibration](#first-time-calibration)
@@ -37,6 +40,9 @@ A Python-based automation bot for Clash of Clans running on the Google Play Game
 - **Optional OCR loot tracking** — reads gold / elixir / dark elixir / gems from the top bar using `rapidocr-onnxruntime` and can stop when storage fills.
 - **Manual-deploy mode** — bot clicks through the menus but lets you deploy the army yourself.
 - **Test / calibrate mode** — scans every icon repeatedly without clicking, so you can tune thresholds and measure detection speed.
+- **Passive army recognition** — separately identifies the configured troop and hero card images in static screenshots, reports match scores and ambiguous matches, and never interacts with the game.
+- **Passive loot analysis** — reads Gold and Elixir from static opponent screenshots using OCR, applies configurable AND thresholds, and returns inconclusive for uncertain values.
+- **Passive Next-button recognition** — reports whether the opponent-screen Next button is visible; it never clicks or starts matchmaking.
 - **Optional GPU acceleration** via `cv2.cuda` (falls back to CPU silently).
 - **Optional `mss` capture** — faster than `pyautogui.screenshot` when available.
 
@@ -51,6 +57,136 @@ A Python-based automation bot for Clash of Clans running on the Google Play Game
     <img src="https://raw.githubusercontent.com/elestyle/elepay-payment-logos/master/payment_logos/svg/paypal.svg" alt="Donate with PayPal" height="100">
   </a>
 </p>
+
+---
+
+## Passive Army Recognition
+
+The recognition subsystem is independent of the attack bot. It examines a
+static screenshot and reports template-match confidence for Momma P.E.K.K.A.,
+Baby Dragons, the four heroes, and Troop Launcher, in that reporting order.
+It does not read troop counts or hero levels, and it does not
+click, deploy units, or run an attack.
+
+The templates in `army_templates/` are tight crops from the supplied
+`reference_images/troop_cards.png` and `reference_images/full_army_bar.png`.
+The original screenshots are kept unchanged. Replace a crop with a better
+capture, or edit `army_recognition_config.json` to point to a different
+template and tune its confidence threshold. Configured scale factors allow
+uniformly scaled screenshots to be checked without assuming one resolution.
+
+Run recognition on either supplied screenshot or another saved image:
+
+```bash
+python army_recognition.py reference_images/full_army_bar.png
+python army_recognition.py reference_images/troop_cards.png
+python army_recognition.py path\to\saved_screenshot.png --config army_recognition_config.json
+```
+
+The report includes each class's score, threshold, best scale and matched
+region, plus explicit lists of missing and ambiguous detections.
+Below-threshold results are reported as `low_confidence`; missing or unreadable
+template files are reported instead of crashing. Competing class matches in
+the same image region are marked `ambiguous`.
+
+Run the static-image tests (no game window or clicks):
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+This passive recognizer is not wired into the existing attack flow. The
+legacy attack flow and its Goblin-card template remain unchanged.
+
+---
+
+## Passive Loot Analysis
+
+`loot_analysis.py` is a standalone OCR utility for saved opponent screenshots.
+It reads only the Gold and Elixir values from the configured Available Loot
+region. Dark Elixir is always ignored. The final result is `QUALIFIES` only
+when both configured minimums pass (`AND`). Missing, ambiguous, low-confidence,
+or unreadable OCR returns `INCONCLUSIVE`; an unreadable value is never treated
+as zero.
+
+The existing `rapidocr-onnxruntime` dependency in `requirements.txt` is used;
+no dependency was added. Install the project requirements with:
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+Analyze a static screenshot:
+
+```powershell
+python loot_analysis.py loot_test_images\loot_above_threshold.png
+python loot_analysis.py loot_test_images\loot_below_threshold.png
+```
+
+The defaults are in `loot_analysis_config.json`:
+
+```json
+{
+  "minimum_gold": 500000,
+  "minimum_elixir": 500000,
+  "ignore_dark_elixir": true,
+  "comparison_mode": "AND"
+}
+```
+
+To change the thresholds, edit `minimum_gold` and/or `minimum_elixir` in that
+JSON file. Both must remain non-negative integers; comparison mode is
+intentionally restricted to `AND`, and Dark Elixir must remain ignored. OCR
+region, row positions, minimum confidence, preprocessing, and image upscaling
+are also configurable there. The region coordinates are normalized to image
+dimensions, so the same configuration applies to resized screenshots with the
+same layout. Use `--config path\to\config.json` to select another valid file.
+
+Example successful output:
+
+```text
+GOLD: 2,657,691
+ELIXIR: 2,210,618
+DARK ELIXIR: IGNORED
+GOLD CHECK: PASS
+ELIXIR CHECK: PASS
+FINAL RESULT: QUALIFIES
+```
+
+If OCR fails, check that the saved image is clear and shows the opponent's
+Available Loot panel, then verify the normalized region and Gold/Elixir row
+bounds in the config. Lowering `minimum_confidence` can accept weaker OCR, but
+may increase incorrect readings; ambiguous results deliberately remain
+inconclusive. This utility is separate from the existing attack flow and does
+not make decisions or interact with the game.
+
+Run all repository tests (army recognition, loot analysis, Next-button
+recognition):
+
+```powershell
+python -m unittest discover -s tests -v
+```
+
+RapidOCR currently supports Python through 3.12. If the selected interpreter
+does not support the OCR dependency, deterministic tests still run and real
+OCR tests are skipped; use a compatible Python interpreter to run real OCR.
+
+---
+
+## Next Button Recognition
+
+`next_button_recognition.py` separately detects the opponent-screen Next
+button in a saved image using the `next_button.png` template cropped from the
+provided opponent screenshot. It reports detection confidence and location;
+the normalized search region and scale/score settings are configurable in
+`next_button_config.json`.
+
+```powershell
+python next_button_recognition.py loot_test_images\loot_above_threshold.png
+```
+
+This is detection and reporting only. It never clicks Next, advances
+matchmaking, or connects to the attack/deployment code.
 
 ---
 
@@ -423,7 +559,18 @@ Repo/
 ├── gollum_click_4.png          # Template: Goblin troop card
 ├── end_battlel_5.png           # Template: "End Battle" button
 ├── surrender_okay_6.png        # Template: Surrender confirm dialog
-└── return_home_7.png           # Template: "Return Home" button
+├── return_home_7.png           # Template: "Return Home" button
+├── army_recognition.py         # Passive screenshot recognition CLI
+├── army_recognition_config.json
+├── army_templates/             # Crops from the supplied army reference screenshots
+├── loot_analysis.py            # Passive static screenshot OCR
+├── loot_analysis_config.json
+├── next_button_recognition.py  # Passive Next-button detection
+├── next_button_config.json
+├── next_button.png             # Template cropped from an opponent screenshot
+├── reference_images/            # Supplied static army-bar screenshots
+├── loot_test_images/            # Supplied static opponent screenshots for OCR
+└── tests/                      # Recognition and OCR tests
 ```
 
 Files the bot creates:

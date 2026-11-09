@@ -1,0 +1,53 @@
+{
+  "scales": [
+    0.35,
+    0.5,
+    0.65,
+    0.75,
+    0.85,
+    0.95,
+    1.0,
+    1.1,
+    1.25,
+    1.5,
+    1.75,
+    2.0
+  ],
+  "templates": [
+    {
+      "label": "Momma P.E.K.K.A",
+      "path": "army_templates/momma_pekka.png",
+      "threshold": 0.82
+    },
+    {
+      "label": "Baby Dragons",
+      "path": "army_templates/baby_dragon.png",
+      "threshold": 0.82
+    },
+    {
+      "label": "Barbarian King",
+      "path": "army_templates/barbarian_king.png",
+      "threshold": 0.82
+    },
+    {
+      "label": "Archer Queen",
+      "path": "army_templates/archer_queen.png",
+      "threshold": 0.82
+    },
+    {
+      "label": "Grand Warden",
+      "path": "army_templates/grand_warden.png",
+      "threshold": 0.82
+    },
+    {
+      "label": "Royal Champion",
+      "path": "army_templates/royal_champion.png",
+      "threshold": 0.82
+    },
+    {
+      "label": "Troop Launcher",
+      "path": "army_templates/troop_launcher.png",
+      "threshold": 0.82
+    }
+  ]
+}
